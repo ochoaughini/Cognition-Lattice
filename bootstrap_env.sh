@@ -13,7 +13,7 @@ source sios_env/bin/activate
 
 pip install --upgrade pip >/dev/null
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu >/dev/null
-pip install pandas numpy matplotlib scipy scikit-learn opencv-python pytesseract requests aiohttp websockets gitpython tweepy flask fastapi uvicorn rich click >/dev/null
+pip install pandas numpy matplotlib scipy scikit-learn opencv-python pytesseract requests aiohttp websockets gitpython tweepy flask fastapi uvicorn rich click watchdog >/dev/null
 
 echo "source $(pwd)/sios_env/bin/activate" >> ~/.bashrc
 
