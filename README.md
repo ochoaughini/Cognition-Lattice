@@ -9,7 +9,10 @@ machine while communicating with remote planners like OpenAI Codex.
 - `bootstrap_env.sh` – sets up a Python virtual environment with required
   packages.
 - `agent_core.py` – central orchestrator that loads agents and executes JSON
-  intents from `cognition_lattice/intents`.
+  intents from `cognition_lattice/intents`. Agents placed in
+  `cognition_lattice/agents` are discovered dynamically at runtime via a
+  file-system watcher, allowing new agent modules to be hot-reloaded without
+  restarting the core.
 - `codex_link.py` – helper script for creating intent files (simulating Codex).
 - `retrovector_bridge.py` – placeholder for dynamic communication routing.
 - `agentfeed_twitter.py` – posts short status updates to Twitter using Tweepy.
