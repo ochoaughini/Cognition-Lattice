@@ -33,8 +33,11 @@ pip install pytest pytest-cov watchdog
 # Run unit tests
 pytest --cov=cognition_lattice/agents
 
-# Start AgentCore (polling mode)
+# Start AgentCore worker
 python agent_core.py
+
+# In a separate terminal run the intent gateway
+python intent_gateway.py
 ```
 
 ### Running with Docker Compose
@@ -74,6 +77,10 @@ curl -X POST http://localhost:8000/intents \
 │   ├── base_agent.py           # Abstract base class for agents
 │   ├── intents/                # (Deprecated polling; for reference)
 │   └── responses/              # (Deprecated polling; for reference)
+├── sios_messaging.py           # Transport abstraction layer
+├── metrics.py                  # Prometheus metrics helpers
+├── validation.py               # JSON Schema validation utilities
+├── schemas/                    # Intent schema definitions
 ├── docker-compose.yaml         # Broker, metrics, logs, and AgentCore services
 ├── Dockerfile                  # Builds AgentCore and dependencies
 ├── bootstrap_env.sh            # Local Python venv bootstrap script

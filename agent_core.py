@@ -9,18 +9,28 @@ from pathlib import Path
 from typing import Dict, Any, Type
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from jsonschema import ValidationError
+
+import sios_messaging as messaging
+from validation import validate_intent
+from metrics import (
+    intents_received,
+    intents_success,
+    intents_failure,
+    intent_duration,
+    start_metrics_server,
+)
 
 from cognition_lattice.base_agent import BaseAgent
 
 AGENTS_DIR = Path(__file__).parent / "cognition_lattice" / "agents"
-INTENTS_DIR = Path(__file__).parent / "cognition_lattice" / "intents"
-RESPONSES_DIR = Path(__file__).parent / "cognition_lattice" / "responses"
 
 class AgentCore:
     def __init__(self) -> None:
         self.registry: Dict[str, Type[BaseAgent]] = {}
         self._load_agents()
         self._start_watcher()
+        start_metrics_server()
 
     def _start_watcher(self) -> None:
         """Start filesystem watcher for hot-reloading agents."""
@@ -63,21 +73,25 @@ class AgentCore:
             return {"status": "error", "message": str(exc)}
 
     def loop(self) -> None:
-        INTENTS_DIR.mkdir(parents=True, exist_ok=True)
-        RESPONSES_DIR.mkdir(parents=True, exist_ok=True)
         try:
             while True:
-                for intent_file in INTENTS_DIR.glob("*.json"):
+                for intent in messaging.receive_intents():
+                    intent_type = intent.get("intent", "unknown")
+                    intents_received.labels(intent_type=intent_type).inc()
                     try:
-                        intent = json.loads(intent_file.read_text())
+                        validate_intent(intent)
+                        with intent_duration.labels(intent_type=intent_type).time():
+                            result = self.dispatch(intent)
+                        intents_success.labels(intent_type=intent_type).inc()
+                    except ValidationError as exc:
+                        result = {"status": "error", "message": f"Validation error: {exc}"}
+                        intents_failure.labels(intent_type=intent_type).inc()
                     except Exception as exc:
-                        result = {"status": "error", "message": f"Invalid JSON: {exc}"}
-                    else:
-                        result = self.dispatch(intent)
-                    resp_file = RESPONSES_DIR / intent_file.name
-                    resp_file.write_text(json.dumps(result, indent=2))
-                    intent_file.unlink()
-                time.sleep(1)
+                        result = {"status": "error", "message": str(exc)}
+                        intents_failure.labels(intent_type=intent_type).inc()
+                    messaging.publish_response(result)
+                    messaging.acknowledge_intent(intent)
+                time.sleep(0.1)
         finally:
             if hasattr(self, "_observer"):
                 self._observer.stop()
