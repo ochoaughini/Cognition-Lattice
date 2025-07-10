@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+jsonschema
+prometheus_client
+watchdog
+redis
+httpx

@@ -5,8 +5,22 @@ services:
     command: python agent_core.py
     ports:
       - "8001:8001"
+    environment:
+      - MESSAGE_BROKER=redis
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
   gateway:
     build: .
     command: python intent_gateway.py
     ports:
       - "8000:8000"
+    environment:
+      - MESSAGE_BROKER=redis
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
