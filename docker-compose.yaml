@@ -1,0 +1,12 @@
+version: '3'
+services:
+  agent_core:
+    build: .
+    command: python agent_core.py
+    ports:
+      - "8001:8001"
+  gateway:
+    build: .
+    command: python intent_gateway.py
+    ports:
+      - "8000:8000"

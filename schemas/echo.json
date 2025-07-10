@@ -1,0 +1,12 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EchoIntent",
+  "type": "object",
+  "properties": {
+    "intent": {"const": "echo"},
+    "args": {"type": "string"},
+    "intent_id": {"type": "string"}
+  },
+  "required": ["intent", "intent_id"],
+  "additionalProperties": false
+}
