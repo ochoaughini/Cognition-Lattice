@@ -75,7 +75,7 @@ class AgentCore:
     def loop(self) -> None:
         try:
             while True:
-                for intent in messaging.receive_intents():
+                for intent in messaging.receive_intents(timeout=0.1):
                     intent_type = intent.get("intent", "unknown")
                     intents_received.labels(intent_type=intent_type).inc()
                     try:
