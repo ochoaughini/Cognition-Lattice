@@ -1,0 +1,6 @@
+- intent: plan
+  intent_id: plan-1
+- intent: act
+  intent_id: act-1
+- intent: verify
+  intent_id: verify-1

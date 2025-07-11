@@ -4,6 +4,8 @@ intents_received = Counter('intents_received_total', 'Total intents received', [
 intents_success = Counter('intents_success_total', 'Total intents processed successfully', ['intent_type'])
 intents_failure = Counter('intents_failure_total', 'Total intents failed', ['intent_type'])
 intent_duration = Histogram('intent_execution_duration_seconds', 'Intent execution time', ['intent_type'])
+intent_success = Counter('intent_success_total', 'Total successful intents', ['agent'])
+intent_failure = Counter('intent_failure_total', 'Total failed intents', ['agent'])
 
 
 def start_metrics_server(port: int = 8001) -> None:

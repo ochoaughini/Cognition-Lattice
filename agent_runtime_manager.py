@@ -46,3 +46,26 @@ class AgentRuntimeManager:
                     )
                     raise
                 await asyncio.sleep(delay)
+
+    async def run_with_backoff(
+        self,
+        name: str,
+        func,
+        retries: int = 3,
+        base_delay: float = 0.1,
+    ):
+        for attempt in range(1, retries + 1):
+            task = asyncio.create_task(func())
+            self.tasks[name] = task
+            try:
+                result = await task
+                self.tasks.pop(name, None)
+                return result
+            except Exception as exc:
+                self.logger.warning(
+                    "Task %s failed attempt %d: %s", name, attempt, exc
+                )
+                self.tasks.pop(name, None)
+                await asyncio.sleep(base_delay * (2 ** (attempt - 1)))
+                if attempt == retries:
+                    raise
