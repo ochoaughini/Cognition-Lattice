@@ -20,3 +20,43 @@ class AgentRuntimeManager:
             raise
         finally:
             self.tasks.pop(name, None)
+
+    async def run_with_retry(
+        self,
+        name: str,
+        func,
+        retries: int = 3,
+        delay: float = 0.1,
+    ):
+        """Run ``func`` retrying on failure.
+
+        Parameters
+        ----------
+        name: str
+            Identifier for the task used to track running tasks.
+        func:
+            Callable returning an awaitable to execute.
+        retries: int
+            Number of attempts before raising the last exception.
+        delay: float
+            Delay between attempts in seconds.
+        """
+
+        for attempt in range(1, retries + 1):
+            task = asyncio.create_task(func())
+            self.tasks[name] = task
+            try:
+                result = await task
+                self.tasks.pop(name, None)
+                return result
+            except Exception as exc:  # pylint: disable=broad-except
+                self.logger.warning(
+                    "Task %s failed attempt %d: %s", name, attempt, exc
+                )
+                self.tasks.pop(name, None)
+                if attempt == retries:
+                    self.logger.warning(
+                        "Task %s giving up after %d attempts", name, retries
+                    )
+                    raise
+                await asyncio.sleep(delay)
