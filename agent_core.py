@@ -22,6 +22,8 @@ from metrics import (
     intents_failure,
     intent_duration,
     start_metrics_server,
+    intent_success,
+    intent_failure,
 )
 
 from cognition_lattice.base_agent import BaseAgent
@@ -72,8 +74,14 @@ class AgentCore:
             return {"status": "error", "message": f"No agent for intent {intent_type}"}
         agent = agent_cls()
         try:
-            return agent.execute(intent)
+            result = agent.execute(intent)
+            if result.get("status") == "error":
+                intent_failure.labels(agent=agent_cls.__name__).inc()
+            else:
+                intent_success.labels(agent=agent_cls.__name__).inc()
+            return result
         except Exception as exc:
+            intent_failure.labels(agent=agent_cls.__name__).inc()
             return {"status": "error", "message": str(exc)}
 
     def loop(self) -> None:
