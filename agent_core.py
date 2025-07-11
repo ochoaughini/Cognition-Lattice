@@ -6,7 +6,10 @@ import time
 import sys
 import importlib
 from pathlib import Path
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, Callable, List
+from dataclasses import dataclass
+import asyncio
+import logging
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from jsonschema import ValidationError
@@ -22,6 +25,7 @@ from metrics import (
 )
 
 from cognition_lattice.base_agent import BaseAgent
+from messaging_bus import MessageBus, Message
 
 AGENTS_DIR = Path(__file__).parent / "cognition_lattice" / "agents"
 
@@ -106,6 +110,64 @@ class _AgentEventHandler(FileSystemEventHandler):
     def on_any_event(self, event) -> None:
         if event.src_path.endswith(".py"):
             self.core._load_agents()
+
+
+@dataclass
+class AgentContext:
+    """Context provided to async agents."""
+
+    mesh: "AgentMesh"
+    manifest: Dict[str, Any]
+
+
+class AgentMesh:
+    """Simple async agent orchestrator using MessageBus."""
+
+    def __init__(self, manifest_dir: str) -> None:
+        self.manifest_dir = Path(manifest_dir)
+        self.message_bus = MessageBus()
+        self.manifests: List[Dict[str, Any]] = []
+        self.tasks: List[asyncio.Task] = []
+        self._load_manifests()
+
+    def _load_manifests(self) -> None:
+        if not self.manifest_dir.exists():
+            logging.warning("Manifest directory %s does not exist", self.manifest_dir)
+            return
+        for path in self.manifest_dir.glob("*.json"):
+            try:
+                data = json.loads(path.read_text())
+                self.manifests.append(data)
+            except Exception as exc:
+                logging.error("Failed to load manifest %s: %s", path, exc)
+
+    async def start(self) -> None:
+        for manifest in self.manifests:
+            module = importlib.import_module(manifest["module"])
+            func: Callable[[Message, AgentContext], Any] = getattr(module, manifest.get("function", "main"))
+            context = AgentContext(self, manifest)
+            task = asyncio.create_task(self._run_agent(func, manifest, context))
+            self.tasks.append(task)
+
+    async def _run_agent(self, func: Callable[[Message, AgentContext], Any], manifest: Dict[str, Any], context: AgentContext) -> None:
+        patterns = manifest.get("subscriptions", [])
+        async for message in self.message_bus.subscribe(patterns):
+            try:
+                result = await func(message, context)
+                if isinstance(result, Message):
+                    await self.message_bus.publish(f"response.{message.message_id}", result)
+            except Exception:
+                logging.exception("Agent %s failed", manifest.get("id"))
+
+    async def stop(self) -> None:
+        for task in list(self.tasks):
+            task.cancel()
+        for task in list(self.tasks):
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        await self.message_bus.close()
 
 if __name__ == "__main__":
     AgentCore().loop()
