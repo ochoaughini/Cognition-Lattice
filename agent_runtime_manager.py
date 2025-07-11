@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Dict
+from typing import Any, Dict, Callable, Coroutine
 
 
 class AgentRuntimeManager:
@@ -24,10 +24,10 @@ class AgentRuntimeManager:
     async def run_with_retry(
         self,
         name: str,
-        func,
+        func: Callable[[], Coroutine[Any, Any, Any]],
         retries: int = 3,
         delay: float = 0.1,
-    ):
+    ) -> Any:
         """Run ``func`` retrying on failure.
 
         Parameters
@@ -47,16 +47,17 @@ class AgentRuntimeManager:
             self.tasks[name] = task
             try:
                 result = await task
-                self.tasks.pop(name, None)
                 return result
             except Exception as exc:  # pylint: disable=broad-except
                 self.logger.warning(
                     "Task %s failed attempt %d: %s", name, attempt, exc
                 )
-                self.tasks.pop(name, None)
                 if attempt == retries:
                     self.logger.warning(
                         "Task %s giving up after %d attempts", name, retries
                     )
                     raise
-                await asyncio.sleep(delay)
+            finally:
+                self.tasks.pop(name, None)
+
+            await asyncio.sleep(delay)
