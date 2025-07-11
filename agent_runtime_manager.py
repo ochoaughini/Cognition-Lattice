@@ -28,8 +28,6 @@ class AgentRuntimeManager:
         retries: int = 3,
         delay: float = 0.1,
     ):
-        """Run `func` retrying on failure."""
-
         for attempt in range(1, retries + 1):
             task = asyncio.create_task(func())
             self.tasks[name] = task
@@ -37,7 +35,7 @@ class AgentRuntimeManager:
                 result = await task
                 self.tasks.pop(name, None)
                 return result
-            except Exception as exc:  # pylint: disable=broad-except
+            except Exception as exc:
                 self.logger.warning(
                     "Task %s failed attempt %d: %s", name, attempt, exc
                 )
