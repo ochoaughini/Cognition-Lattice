@@ -1,0 +1,6 @@
+{
+  "id": "echo_agent",
+  "module": "async_echo_agent",
+  "function": "echo_agent",
+  "subscriptions": ["echo.*"]
+}
