@@ -28,19 +28,7 @@ class AgentRuntimeManager:
         retries: int = 3,
         delay: float = 0.1,
     ):
-        """Run ``func`` retrying on failure.
-
-        Parameters
-        ----------
-        name: str
-            Identifier for the task used to track running tasks.
-        func:
-            Callable returning an awaitable to execute.
-        retries: int
-            Number of attempts before raising the last exception.
-        delay: float
-            Delay between attempts in seconds.
-        """
+        """Run `func` retrying on failure."""
 
         for attempt in range(1, retries + 1):
             task = asyncio.create_task(func())
