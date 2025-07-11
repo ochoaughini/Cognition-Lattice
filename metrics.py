@@ -7,4 +7,7 @@ intent_duration = Histogram('intent_execution_duration_seconds', 'Intent executi
 
 
 def start_metrics_server(port: int = 8001) -> None:
-    start_http_server(port)
+    try:
+        start_http_server(port)
+    except OSError:
+        pass

@@ -12,6 +12,7 @@ This repository contains a prototype implementation of the S.I.O.S. architecture
 * **Containerized Deployment**: A Dockerfile and `docker-compose.yaml` orchestrate S.I.O.S. services (message broker, metrics/logs infrastructure, AgentCore), enabling reproducible environments and seamless scaling via Kubernetes or Docker Swarm.
 * **API Gateway for Intents**: A lightweight FastAPI service (`intent_gateway.py`) exposes HTTP/WebSocket endpoints for creating and managing intents, adding authentication, tracing metadata, and fine-grained authorization.
 * **Multi-Agent Orchestration**: Advanced harmonizer supports SAGA and choreography patterns, allowing agents to coordinate stateful workflows with rollback capabilities and compensating transactions.
+* **Memory and Model Registry**: Pluggable memory backends and a dynamic model registry enable agents to share state and load ML models on demand.
 
 ## Getting Started
 
