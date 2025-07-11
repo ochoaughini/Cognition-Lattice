@@ -93,6 +93,8 @@ class AgentCore:
                     except Exception as exc:
                         result = {"status": "error", "message": str(exc)}
                         intents_failure.labels(intent_type=intent_type).inc()
+                    if 'intent_id' not in result and 'intent_id' in intent:
+                        result['intent_id'] = intent['intent_id']
                     messaging.publish_response(result)
                     messaging.acknowledge_intent(intent)
                 time.sleep(0.1)
