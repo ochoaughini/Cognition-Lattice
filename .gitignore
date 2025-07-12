@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+
+ledger.db
+
+node_modules/
